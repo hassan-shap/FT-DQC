@@ -3,9 +3,9 @@ import random
 import time
 from pymatching import Matching
 
-def surface_code(d):
-    dx = 2 * d 
-    dy = d 
+def surface_code(dx, dy):
+    # dx = 2 * d 
+    # dy = d 
 
     qubit_coords = []
     for i_y in range(dy):
@@ -41,15 +41,115 @@ def surface_code(d):
                 Smat[s_idx, qubit_idx[f"{q}"]] = 1
             s_idx += 1
 
-    qubit_bdy = [qubit_idx[f"({d+0.5}, {i_y})"] for i_y in range(dy)]
-    S_bdy = [Smat_idx[f"({d}, {i_y})"] for i_y in range(dy)]
+    qubit_bdy = [qubit_idx[f"({dx/2+0.5}, {i_y})"] for i_y in range(dy)]
+    S_bdy = [Smat_idx[f"({dx//2}, {i_y})"] for i_y in range(dy)]
     bdy = qubit_bdy, S_bdy
 
     qubit_logical = [qubit_idx[f"({0.5}, {i_y})"] for i_y in range(dy)]
     logicals = np.zeros(num_q, dtype = np.uint8)
     logicals[qubit_logical] = 1
 
-    return Smat, logicals, bdy
+    return Smat, logicals, bdy, qubit_idx
+
+
+def surface_code_3d(dx, dy,repetitions):
+
+    # dx = 2*d
+    # dy = d 
+    # repetitions = d
+
+    qubit_coords_spacetime = []
+    for i_t in range(repetitions):
+        for i_y in range(dy):
+            for i_x in range(dx):
+                if i_t < repetitions - 1:
+                    if i_x ==0:
+                        qubit_coords_spacetime.append( ( i_x + 0.5, i_y, i_t ) )
+                    elif i_y == dy - 1:
+                        qubit_coords_spacetime.append( ( i_x + 0.5, i_y, i_t ) )
+                        qubit_coords_spacetime.append( ( i_x, i_y, i_t + 0.5 ) )
+                    else:
+                        qubit_coords_spacetime.append( ( i_x + 0.5, i_y, i_t ) )
+                        qubit_coords_spacetime.append( ( i_x, i_y + 0.5, i_t ) )
+                        qubit_coords_spacetime.append( ( i_x, i_y, i_t + 0.5 ) )
+                else:
+                    if i_x ==0:
+                        qubit_coords_spacetime.append( ( i_x + 0.5, i_y, i_t ) )
+                    elif i_y == dy - 1:
+                        qubit_coords_spacetime.append( ( i_x + 0.5, i_y, i_t ) )
+                    else:
+                        qubit_coords_spacetime.append( ( i_x + 0.5, i_y, i_t ) )
+                        qubit_coords_spacetime.append( ( i_x, i_y + 0.5, i_t ) )
+
+    
+    qubit_idx_spacetime = {}
+    # qubit_idx_to_coords_spacetime = {}
+    for idx, coords in enumerate(qubit_coords_spacetime):
+        qubit_idx_spacetime[f"{coords}"] = idx
+        # qubit_idx_to_coords_spacetime[idx] = coords
+
+    num_q_spacetime = len(qubit_coords_spacetime)
+    num_s_spacetime = (dx-1) * dy * repetitions
+    s_idx = 0
+    Smat_spacetime = np.zeros(( num_s_spacetime, num_q_spacetime))
+    Smat_idx_spacetime = {}
+    for i_t in range(repetitions):
+        for i_y in range(dy):
+            for i_x in range(1,dx):
+                Smat_idx_spacetime[f"({i_x}, {i_y}, {i_t})"] = s_idx
+                if i_t == 0:
+                    if i_y == 0 :
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y + 0.5, i_t),
+                                (i_x, i_y, i_t + 0.5)
+                                ]
+                    elif i_y == dy - 1 :
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y - 0.5, i_t),
+                                (i_x, i_y, i_t + 0.5)
+                                ]
+                    else:
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y + 0.5, i_t),
+                                (i_x, i_y - 0.5, i_t), (i_x, i_y, i_t + 0.5)
+                                ]
+                elif i_t == repetitions - 1:
+                    if i_y == 0 :
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y + 0.5, i_t),
+                                (i_x, i_y, i_t - 0.5)
+                                ]
+                    elif i_y == dy - 1 :
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y - 0.5, i_t),
+                                (i_x, i_y, i_t - 0.5)
+                                ]
+                    else:
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y + 0.5, i_t),
+                                (i_x, i_y - 0.5, i_t), (i_x, i_y, i_t - 0.5)
+                                ]
+                else:
+                    if i_y == 0 :
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y + 0.5, i_t),
+                                (i_x, i_y, i_t + 0.5), (i_x, i_y, i_t - 0.5)
+                                ]
+                    elif i_y == dy - 1 :
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y - 0.5, i_t),
+                                (i_x, i_y, i_t + 0.5), (i_x, i_y, i_t - 0.5)
+                                ]
+                    else:
+                        qvec = [(i_x + 0.5, i_y, i_t), (i_x - 0.5, i_y, i_t), (i_x, i_y + 0.5, i_t),
+                                (i_x, i_y - 0.5, i_t), (i_x, i_y, i_t + 0.5), (i_x, i_y, i_t - 0.5)
+                                ]
+                for q in qvec:
+                    Smat_spacetime[s_idx, qubit_idx_spacetime[f"{q}"]] = 1
+                s_idx += 1
+
+    ancilla_idx = [qubit_idx_spacetime[f"({i_x}, {i_y}, {i_t+0.5})"] for i_x in range(1,dx) for i_y in range(dy) for i_t in range(repetitions-1)]
+
+    qubit_bdy = [qubit_idx_spacetime[f"({dx/2+0.5}, {i_y}, {i_t})"] for i_y in range(dy) for i_t in range(repetitions)]
+    S_bdy = [qubit_idx_spacetime[f"({dx//2}, {i_y}, {i_t+0.5})"] for i_y in range(dy) for i_t in range(repetitions-1)]
+    bdy = qubit_bdy, S_bdy
+
+    qubit_idx_mat = qubit_idx_spacetime, qubit_coords_spacetime, ancilla_idx
+
+    # return Smat_spacetime, qubit_idx_mat
+    return Smat_spacetime, bdy, qubit_idx_mat
 
 harmonic = lambda k: (1/np.arange(1,k+1)).sum()
 
